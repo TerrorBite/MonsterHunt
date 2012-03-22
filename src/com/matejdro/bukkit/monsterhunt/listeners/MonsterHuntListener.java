@@ -56,28 +56,45 @@ public class MonsterHuntListener implements Listener {
 		
 	@EventHandler()
 	public void onEntityDeath (EntityDeathEvent event) {
+		// If a player died:
 		if (event.getEntity() instanceof Player)
 		{
+			// Get the player who died
 			Player player = (Player) event.getEntity();
+			// Attempt to get the hunt world they died in
 			MonsterHuntWorld world = HuntWorldManager.getWorld(player.getWorld().getName());
 			
-			if (world == null || world.getWorld() == null) return;
+			if (world == null || world.getWorld() == null) return; // This world isn't configured for a hunt, or something went wrong
+			
+			// If there is no death penalty, ignore player death
 			if (world.settings.getInt(Setting.DeathPenalty) == 0) return;
 			
+			// If this world currently has a hunt, and this player is hunting:
 			if (world.state > 1 && world.Score.containsKey(player.getName()))
 			{
+				// Fetch player's score
 				double score = world.Score.get(player.getName()) + 0.00;
-				score = score - (score * world.settings.getInt(Setting.DeathPenalty) / 100.00);	
+				// Penalize their score
+				score = score - (score * world.settings.getInt(Setting.DeathPenalty) / 100.00);
+				// Save updated score
 				world.Score.put(player.getName(), (int) Math.round(score));
+				// Inform player of their penalty
 				Util.Message(world.settings.getString(Setting.DeathMessage),player);
 			}
 		}
 		
+		// Else a monster or other mob has died
+		
+		// Ignore monster death if it's not in the hunt zone, if there is one
 		if (!HuntZone.isInsideZone(event.getEntity().getLocation())) return;
+		// Ignore monster deaths that weren't caused by another entity
 		if (event.getEntity() == null || !(event.getEntity().getLastDamageCause() instanceof EntityDamageByEntityEvent)) return;
+		// Get the hunt world that the death occurred in
 		MonsterHuntWorld world = HuntWorldManager.getWorld(event.getEntity().getWorld().getName());
+		// Ignore monster death if there is no hunt active in this world
 		if (world == null || world.getWorld() == null || world.state < 2) return;	
 		Util.Debug("test");
+		// Record the kill
 		kill((LivingEntity) event.getEntity(), world);
 		}
 	
